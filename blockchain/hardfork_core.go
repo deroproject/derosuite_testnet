@@ -17,6 +17,7 @@
 package blockchain
 
 import "github.com/deroproject/derosuite/block"
+import "github.com/deroproject/derosuite/config"
 import "github.com/deroproject/derosuite/storage"
 import "github.com/deroproject/derosuite/globals"
 
@@ -47,13 +48,17 @@ var mainnet_hard_forks = []Hard_fork{
 	{1,      0, 0, 0, 0, true}, // version 1 hard fork where genesis block landed and chain migration occurs
 	// version 1 has difficulty hardcoded to 1
 	{2, 95551,  0, 0, 0, true}, // version 2 hard fork where Atlantis bootstraps , it's mandatory
-        {3, 721000, 0, 0, 0, true}, // version 3 hard fork emission fix, it's mandatory
+    {3, 721000, 0, 0, 0, true}, // version 3 hard fork emission fix, it's mandatory
+   // {4,0,0,0,0,true}, // version 4 , different mining algorithm, increase block time
 }
 
 // current testnet_hard_forks
 var testnet_hard_forks = []Hard_fork{
 	{1, 0, 0, 0, 0, true},    // version 1 hard fork where genesis block landed
-	{2, 1984, 0, 0, 0, true}, // version 2 hard fork where we started , it's mandatory
+	{2, 0, 0, 0, 0, true}, // version 2 hard fork where we started , it's mandatory
+    {3, 6, 0, 0, 0, true}, // version 3 hard fork where we started , it's mandatory
+    {4, 20, 0, 0, 0, true}, // version 4 , mining algorithm with condition, increase block time
+    
 }
 
 // current simulation_hard_forks
@@ -197,6 +202,15 @@ func (chain *Blockchain) Get_HF_info() (state int, enabled bool, earliest_height
 	}
 
 	return
+}
+
+func (chain *Blockchain) Get_Current_BlockTime() uint64 { // it is last version voted or mandatory update
+
+    block_time:= config.BLOCK_TIME
+    if chain.Get_Current_Version() >= 4 {
+         block_time= config.BLOCK_TIME_hf4
+    }
+	return block_time
 }
 
 // current hard fork version , block major version

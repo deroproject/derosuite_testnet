@@ -397,7 +397,7 @@ func (chain *Blockchain) Get_Cumulative_Difficulty() uint64 {
 		}
 
 		past := chain.Get_Block_Past(nil,blid)
-		return  chain.Get_Difficulty_At_Tips(nil, past,uint64(uint64(time.Now().UTC().Unix())+config.BLOCK_TIME)).Uint64()
+		return  chain.Get_Difficulty_At_Tips(nil, past,uint64(uint64(time.Now().UTC().Unix())+config. BLO CK_T IME)).Uint64()
 
 	*/
 
@@ -409,10 +409,7 @@ func (chain *Blockchain) Get_Median_Block_Size() uint64 { // get current cached 
 }
 
 func (chain *Blockchain) Get_Network_HashRate() uint64 {
-	if chain.Get_Difficulty() <= config.BLOCK_TIME {
-		return chain.Get_Difficulty()
-	}
-	return chain.Get_Difficulty() / config.BLOCK_TIME
+	return chain.Get_Difficulty() / chain.Get_Current_BlockTime()
 }
 
 // confirm whether the block exist in the data

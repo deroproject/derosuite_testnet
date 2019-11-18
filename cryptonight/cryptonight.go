@@ -28,7 +28,7 @@ var HardwareAES bool = false
 
 const MAX_ARRAY_LIMIT = (4 * 1024 * 1024)
 
-func cryptonight(input []byte) []byte {
+func cryptonight(input []byte, version int) []byte {
 
 	var dummy [256]byte
 	var S [25]uint64
@@ -115,6 +115,15 @@ func cryptonight(input []byte) []byte {
 
 		b[0] ^= c[0]
 		b[1] ^= c[1]
+
+        switch version {
+    
+        case 0 : // default is nothing
+
+        case 1 : b[0] ^= 10555428962492473492 
+
+
+        }
 
 		ScratchPad[((a[0]&0x1FFFF0)>>3)+0] = b[0]
 		ScratchPad[((a[0]&0x1FFFF0)>>3)+1] = b[1]
@@ -259,8 +268,8 @@ a73bd37aba3454776b40733854a8349fe6359eb2c91d93bc727c69431c1d1f95hash of blob
 Get long hash a73bd37aba3454776b40733854a8349fe6359eb2c91d93bc727c69431c1d1f95
 */
 
-func SlowHash(msg []byte) []byte {
-	return cryptonight(append(msg, byte(0x01)))
+func SlowHash(msg []byte, version int) []byte {
+	return cryptonight(append(msg, byte(0x01)), version)
 }
 
 // Rotate

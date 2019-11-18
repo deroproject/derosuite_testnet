@@ -194,7 +194,9 @@ func (chain *Blockchain) Create_new_miner_block(miner_address address.Address) (
 	}
 
 	//bl.Prev_Hash = top_hash
-	bl.Nonce = rand.New(globals.NewCryptoRandSource()).Uint32() // nonce can be changed by the template header
+    for ;bl.Nonce == 0 || bl.Nonce % 101 != 0; {
+	    bl.Nonce = rand.New(globals.NewCryptoRandSource()).Uint32() * 101 // nonce can be changed by the template header
+    }
 
 	for i := range tx_hash_list_included {
 		bl.Tx_hashes = append(bl.Tx_hashes, tx_hash_list_included[i])

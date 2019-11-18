@@ -16,6 +16,7 @@
 
 package block
 
+import "fmt"
 import "bytes"
 import "testing"
 import "encoding/hex"
@@ -193,6 +194,28 @@ func Test_testnet_Genesis_block_serdes(t *testing.T) {
 	if nil == bl.CopyNonceFromBlockWork(hash[:]) { // this should give an error
 		t.Fatalf("Copynonce test failed")
 	}
+
+    bl.ClearNonce()
+    bl.ClearExtraNonce()
+    hash = bl.GetPoWHash()
+
+    t.Logf("Plain BLOCK Hash %s", hash)
+    bl.Major_Version=4
+    hash = bl.GetPoWHash()
+    t.Logf("Plain BLOCKv4 both 0  Hash  %s", hash)
+    bl.Nonce = 1
+    hash = bl.GetPoWHash()
+    if fmt.Sprintf("%s",hash) != "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" {
+            t.Fatalf("v4 extra condition failed")
+    }
+    t.Logf("Plain BLOCKv4 bnonce 1   Hash  %s", hash)
+    bl.ClearNonce()
+    bl.ExtraNonce[31]=1
+    hash = bl.GetPoWHash()
+    if fmt.Sprintf("%s",hash) != "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" {
+            t.Fatalf("v4 extra condition failed")
+    }
+    t.Logf("Plain BLOCKv4 extrac nonce 1   Hash  %s", hash)
 
 	/*if bl.GetReward() != 35184372088831 {
 		t.Error("genesis block reward failed \n")

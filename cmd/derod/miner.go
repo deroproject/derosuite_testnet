@@ -53,6 +53,7 @@ import "github.com/deroproject/derosuite/blockchain/rpcserver"
 import "time"
 import "sync"
 import "math/big"
+import mathrand "math/rand"
 import "crypto/rand"
 import "sync/atomic"
 
@@ -93,6 +94,24 @@ func start_miner(chain *blockchain.Blockchain, addr *address.Address, threads in
 
 		cbl, bl := chain.Create_new_miner_block(*addr)
 
+
+        // extra nonce is always at offset 36 and is of length 32
+	var extra_nonce [16]byte
+
+
+    for {
+        rand.Read(extra_nonce[:]) // fill extra nonce with random buffer
+       var exnonce, exnonce_remainder big.Int
+        exnonce.SetBytes(bl.ExtraNonce[:])
+        exnonce_remainder.SetUint64(101)
+        exnonce_remainder.Rem(&exnonce, &exnonce_remainder)
+
+        if exnonce_remainder.Uint64() == 0  {
+            break;
+        }
+    }
+    	bl.SetExtraNonce(extra_nonce[:])
+
 		difficulty := chain.Get_Difficulty_At_Tips(nil, bl.Tips)
 
 		//globals.Logger.Infof("Difficulty of new block is %s", difficulty.String())
@@ -104,7 +123,9 @@ func start_miner(chain *blockchain.Blockchain, addr *address.Address, threads in
 		for i := 0; i < threads; i++ {
 			go generate_valid_PoW(chain, 0, cbl, cbl.Bl, difficulty, &wg) // work should be complete in approx 100 ms, on a 12 cpu system, this would add cost of launching 12 g routine per second
 		}
+
 		wg.Wait()
+
 	}
 
 	// g
@@ -113,18 +134,22 @@ func start_miner(chain *blockchain.Blockchain, addr *address.Address, threads in
 // each invoke will be take atleast 250 milliseconds
 func generate_valid_PoW(chain *blockchain.Blockchain, hf_version uint64, cbl *block.Complete_Block, bl *block.Block, current_difficulty *big.Int, wg *sync.WaitGroup) {
 	var powhash crypto.Hash
-	block_work := bl.GetBlockWork()
+	
 
-	// extra nonce is always at offset 36 and is of length 32
-	var extra_nonce [16]byte
-	rand.Read(extra_nonce[:]) // fill extra nonce with random buffer
+	
 
-	bl.SetExtraNonce(extra_nonce[:])
+    block_work := bl.GetBlockWork()
+
+
 
 	// TODO  this time must be replaced  by detecting TIP change
 	start := time.Now()
 	//deadline := time.Now().Add(250*time.Millisecond)
-	i := uint32(0)
+	i :=  mathrand.Uint32() * 101
+
+    for ;i <= 101 || i % 101 != 0; {
+	    i = mathrand.Uint32() * 101 // nonce can be changed by the template header
+    }
 
 	nonce_buf := block_work[39 : 39+4] // take last 8 bytes as nonce counter and bruteforce it, since slices are linked, it modifies parent
 	for {
@@ -132,11 +157,11 @@ func generate_valid_PoW(chain *blockchain.Blockchain, hf_version uint64, cbl *bl
 
 		atomic.AddUint64(&counter, 1)
 
-		binary.BigEndian.PutUint32(nonce_buf, i)
+		binary.LittleEndian.PutUint32(nonce_buf, i)
 
 		//PoW := crypto.Scrypt_1024_1_1_256(block_work)
 		//PoW := crypto.Keccak256(block_work)
-		PoW := cryptonight.SlowHash(block_work)
+		PoW := cryptonight.SlowHash(block_work, 0)
 		copy(powhash[:], PoW[:])
 
 		if blockchain.CheckPowHashBig(powhash, current_difficulty) == true {
@@ -149,14 +174,28 @@ func generate_valid_PoW(chain *blockchain.Blockchain, hf_version uint64, cbl *bl
 				chain.P2P_Block_Relayer(cbl, 0) // broadcast block to network ASAP
 
 				break
-			}
+			}else{
+                    //globals.Logger.Warnf("Block successfull mined, but something went wrong, as Pow rejected")
+
+                    if bl.GetPoWHash_Version() >= 1 { // make sure nonce sums to 0
+                         var exnonce, exnonce_remainder big.Int
+                         exnonce.SetBytes(bl.ExtraNonce[:])
+                         exnonce_remainder.SetUint64(101)
+                         exnonce_remainder.Rem(&exnonce, &exnonce_remainder)
+        
+            globals.Logger.Warnf("%d %d ", bl.Nonce % 101 , exnonce_remainder.Uint64())  
+        
+                        }
+
+
+                }
 
 		}
 
 		if time.Now().Sub(start) > 250*time.Millisecond {
 			break
 		}
-		i++
+		i+=101
 
 	}
 

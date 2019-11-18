@@ -27,6 +27,7 @@ import "github.com/deroproject/derosuite/crypto"
 // by that time, networking,space requirements  and cryptonote tx processing requiremtn will probably outgrow homeusers
 // since most mining nodes will be running in datacenter, 3 secs  blocks c
 const BLOCK_TIME = uint64(12)
+const BLOCK_TIME_hf4 = uint64(21)
 
 // we are ignoring leap seconds from calculations
 
@@ -146,7 +147,7 @@ var Mainnet = CHAIN_CONFIG{Name: "mainnet",
 }
 
 var Testnet = CHAIN_CONFIG{Name: "testnet", // testnet will always have last 3 bytes 0
-	Network_ID:                       uuid.FromBytesOrNil([]byte{0x59, 0xd7, 0xf7, 0xe9, 0xdd, 0x48, 0xd5, 0xfd, 0x13, 0x0a, 0xf6, 0xe0, 0x9a, 0x04, 0x00, 0x00}),
+	Network_ID:                       uuid.FromBytesOrNil([]byte{0x59, 0xd7, 0xf7, 0xe9, 0xdd, 0x48, 0xd5, 0xfd, 0x13, 0x0a, 0xf6, 0xe0, 0x9a, 0x06, 0x00, 0x00}),
 	Public_Address_Prefix:            0x6cf58, // for dETo 446296
 	Public_Address_Prefix_Integrated: 0x44f58, // for dETi 282456
 	P2P_Default_Port:                 30303,

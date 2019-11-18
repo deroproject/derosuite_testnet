@@ -20,6 +20,7 @@ import "fmt"
 
 //import "sort"
 import "bytes"
+import "math/big"
 import "runtime/debug"
 import "encoding/hex"
 import "encoding/binary"
@@ -134,13 +135,44 @@ func (bl *Block) ClearNonce() {
 	bl.Nonce = 0
 }
 
+func (bl *Block) GetPoWHash_Version() (int){ // for 0,1,2,3 choose  1, for 4 and above choose
+    if bl.Major_Version >=0 &&  bl.Major_Version <= 3	{
+            return 0
+    }else {
+                return 1
+    }
+
+} 
+
 // Get PoW hash , this is very slow function
 func (bl *Block) GetPoWHash() (hash crypto.Hash) {
+
 	long_header := bl.GetBlockWork()
+
+    if bl.GetPoWHash_Version() >= 1 {
+    // make sure nonce sums to 0
+     var exnonce, exnonce_remainder big.Int
+        exnonce.SetBytes(bl.ExtraNonce[:])
+        exnonce_remainder.SetUint64(101)
+        exnonce_remainder.Rem(&exnonce, &exnonce_remainder)
+        
+        // this will decrease asic effectiveness to 1 %
+        if bl.Nonce % 101 != 0 || exnonce_remainder.Uint64() != 0 { // both remainders should be 0 when divided by 101,
+        
+        for i := range hash {
+            hash[i] = 0xff
+        }
+        return 
+
+        }
+    
+        
+    }
 	rlog.Tracef(9, "longheader %x\n", long_header)
-	tmphash := cryptonight.SlowHash(long_header)
-	//   tmphash := crypto.Scrypt_1024_1_1_256(long_header)
-	copy(hash[:], tmphash[:32])
+	tmphash := cryptonight.SlowHash(long_header,0)  
+	            //   tmphash := crypto.Scrypt_1024_1_1_256(long_header)
+	                copy(hash[:], tmphash[:32])
+
 
 	return
 }
